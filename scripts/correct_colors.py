@@ -4,6 +4,7 @@ import os
 import subprocess
 import shutil
 
+
 def correct_color_cast_gray_world(frame):
     """Gray World color correction"""
     frame_float = frame.astype(np.float64)
@@ -166,7 +167,20 @@ def process_video_robust(input_video_path, output_video_path):
         print("OpenCV VideoWriter failed, trying ffmpeg method...")
         return process_video_via_frames(input_video_path, output_video_path)
 
-def correct_videos_colors(videos_path):
+def filter_videos_on_episodes_and_camerakeys(video_files,episodes,camera_keys):
+    """ filter videos files list on selected list of episodes and camera keys"""
+    keep_videos = []
+    for file in video_files:
+        # filter on camera keys:
+        if any([camera_key in str(file) for camera_key in  camera_keys]):
+            if any([f"episode__{int(eps_indx):04d}" in str(file) for eps_indx in  episodes]):
+                keep_videos.append(file)
+    return keep_videos
+            
+        
+        
+
+def correct_videos_colors(all_video_files,episodes,camera_keys,**kwargs):
     """
     Correct color cast in all videos in the specified directory.
     Uses a robust method that first tries OpenCV, then falls back to ffmpeg.
@@ -174,8 +188,8 @@ def correct_videos_colors(videos_path):
     Args:
         videos_path (str): Path to the directory containing video files
     """
-    video_files = [f for f in os.listdir(videos_path) if f.endswith('.mp4')]
-    
+
+    video_files = filter_videos_on_episodes_and_camerakeys(all_video_files,episodes,camera_keys)
     if not video_files:
         print("No video files found in the specified directory.")
         return
@@ -195,7 +209,8 @@ def correct_videos_colors(videos_path):
             shutil.move(temp_output_path, input_video_path)
             print(f"✓ Successfully processed: {input_video_path}")
 
+    return True
 
-if __name__ == "__main__":
-    videos_directory = "/path/to/your/videos"
-    correct_videos_colors(videos_directory)
+# if __name__ == "__main__":
+#     videos_directory = "/path/to/your/videos"
+#     correct_videos_colors(videos_directory)
