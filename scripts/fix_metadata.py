@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-Robot Dataset Corrector - Interactive tool to fix common dataset issues.
-
-Provides corrections for:
-1. Update metadata after deleted episodes
-2. Camera FPS correction (set to 30fps, undersample if needed)
-3. Robot type selection correction
-
-Usage:
-    python robot_dataset_corrector.py --repo-id your-username/dataset-name
-"""
 
 import argparse
 import json

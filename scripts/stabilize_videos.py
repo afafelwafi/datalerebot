@@ -1,22 +1,4 @@
 #!/usr/bin/env python3
-"""
-Video Stabilization for LeRobotDataset
-
-This script stabilizes shaky videos in a LeRobotDataset and creates a new dataset
-with the stabilized videos. It can save the result locally and optionally push to
-Hugging Face Hub.
-
-Usage:
-    python stabilize_dataset.py --input_repo_id <repo_id> --output_dir <output_dir> [options]
-
-Example:
-    python stabilize_dataset.py \
-        --input_repo_id "lerobot/dummy_dataset" \
-        --output_dir "./stabilized_dataset" \
-        --output_repo_id "your_username/stabilized_dataset" \
-        --episodes 0,1,2 \
-        --camera_keys "observation.images.right_view,observation.images.left_view"
-"""
 
 import argparse
 import os

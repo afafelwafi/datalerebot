@@ -682,38 +682,38 @@ def apply_camera_normalization(dataset: LeRobotDataset, mapping: Dict[str, str])
     return dataset
 
 
-if __name__ == "__main__":
-    import argparse
+# if __name__ == "__main__":
+#     import argparse
     
-    parser = argparse.ArgumentParser(description="Normalize camera viewpoints in LeRobot dataset")
-    parser.add_argument("dataset_path", help="Path to the LeRobot dataset (repo_id)")
-    parser.add_argument("--model-name", default="Qwen/Qwen2.5-VL-3B-Instruct", 
-                       help="Vision-language model to use")
-    parser.add_argument("--model-type", default="qwen2.5-vl", 
-                       choices=["qwen2.5-vl", "llava-next"],
-                       help="Type of model")
-    parser.add_argument("--output-dir", help="Output directory for normalization results")
-    parser.add_argument("--dry-run", action="store_true", 
-                       help="Analyze cameras without saving results")
-    parser.add_argument("--sample-frames", type=int, default=5,
-                       help="Number of frames to sample per camera")
-    parser.add_argument("--confidence-threshold", type=float, default=0.8,
-                       help="Minimum confidence for automatic classification")
+#     parser = argparse.ArgumentParser(description="Normalize camera viewpoints in LeRobot dataset")
+#     parser.add_argument("dataset_path", help="Path to the LeRobot dataset (repo_id)")
+#     parser.add_argument("--model-name", default="Qwen/Qwen2.5-VL-3B-Instruct", 
+#                        help="Vision-language model to use")
+#     parser.add_argument("--model-type", default="qwen2.5-vl", 
+#                        choices=["qwen2.5-vl", "llava-next"],
+#                        help="Type of model")
+#     parser.add_argument("--output-dir", help="Output directory for normalization results")
+#     parser.add_argument("--dry-run", action="store_true", 
+#                        help="Analyze cameras without saving results")
+#     parser.add_argument("--sample-frames", type=int, default=5,
+#                        help="Number of frames to sample per camera")
+#     parser.add_argument("--confidence-threshold", type=float, default=0.8,
+#                        help="Minimum confidence for automatic classification")
     
-    args = parser.parse_args()
+#     args = parser.parse_args()
     
-    # Run normalization
-    mapping = normalize_dataset_cameras(
-        dataset_path=args.dataset_path,
-        model_name=args.model_name,
-        model_type=args.model_type,
-        output_dir=args.output_dir,
-        dry_run=args.dry_run,
-        sample_frames=args.sample_frames,
-        confidence_threshold=args.confidence_threshold
-    )
+#     # Run normalization
+#     mapping = normalize_dataset_cameras(
+#         dataset_path=args.dataset_path,
+#         model_name=args.model_name,
+#         model_type=args.model_type,
+#         output_dir=args.output_dir,
+#         dry_run=args.dry_run,
+#         sample_frames=args.sample_frames,
+#         confidence_threshold=args.confidence_threshold
+#     )
     
-    print("\nCamera Viewpoint Normalization Complete!")
-    print("Final Mapping:")
-    for original, normalized in mapping.items():
-        print(f"  {original} -> {normalized}")
+#     print("\nCamera Viewpoint Normalization Complete!")
+#     print("Final Mapping:")
+#     for original, normalized in mapping.items():
+#         print(f"  {original} -> {normalized}")

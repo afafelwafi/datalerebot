@@ -18,11 +18,7 @@ import requests
 from PIL import Image
 from io import BytesIO
 
-try:
-    from lerobot.common.datasets.lerobot_dataset import LeRobotDataset, HF_LEROBOT_HOME
-except ImportError:
-    print("Error: lerobot package not found. Please install it first.")
-    sys.exit(1)
+from lerobot.common.datasets.lerobot_dataset import LeRobotDataset, HF_LEROBOT_HOME
 
 
 def download_sample_image(width: int = 640, height: int = 480, timeout: int = 10) -> np.ndarray:
