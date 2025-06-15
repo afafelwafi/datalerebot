@@ -1,26 +1,110 @@
 import gradio as gr
 from typing import List
 import time
+import subprocess
+import os
 
-
-def preprocess_dataset(dataset_id: str, input_path: str, output_path: str, tasks: List[str], progress=gr.Progress()) -> str:
-    """Handle navigation to dataset and preprocessing tasks"""
-    # Simulate processing steps
-    total_steps = len(tasks) + 2  # +2 for initialization and finalization
-    progress(0, desc="Initializing...")
-    time.sleep(0.5)  # Simulate initialization
+def preprocess_dataset(
+    repo_id: str,
+    output_dir: str,
+    tasks: List[str],
+    episodes: str,
+    camera_keys: str,
+    smoothing_window: int,
+    max_shift_percent: float,
+    model_name: str,
+    model_type: str,
+    max_length: int,
+    sample_frames: int,
+    frame_sampling: str,
+    dry_run: bool,
+    update_episodes: bool,
+    correct_fps: bool,
+    target_fps: int,
+    correct_robot_type: bool,
+    robot_type: str,
+    push_to_hub: bool,
+    output_repo_id: str,
+    analyze_only: bool,
+    verbose: bool,
+    progress=gr.Progress()
+) -> str:
+    """Handle dataset processing with all available options"""
+    try:
+        # Initialize progress
+        progress(0, desc="Initializing...")
+        
+        # Construct the base command
+        cmd = ["python", "main.py", "--repo-id", repo_id]
+        
+        # Add output directory if specified
+        if output_dir:
+            cmd.extend(["--output-dir", output_dir])
+        
+        # Add processing options based on selected tasks
+        if "Run Full Pipeline" in tasks:
+            cmd.append("--all")
+        if "Stabilize Videos" in tasks:
+            cmd.append("--stabilize")
+        if "Enhance Task Descriptions" in tasks:
+            cmd.append("--enhance-tasks")
+        if "Correct Metadata" in tasks:
+            cmd.append("--correct-metadata")
+        
+        # Add video stabilization parameters
+        if episodes:
+            cmd.extend(["--episodes"] + episodes.split())
+        if camera_keys:
+            cmd.extend(["--camera-keys"] + camera_keys.split())
+        cmd.extend(["--smoothing-window", str(smoothing_window)])
+        cmd.extend(["--max-shift-percent", str(max_shift_percent)])
+        
+        # Add task enhancement parameters
+        cmd.extend(["--model-name", model_name])
+        cmd.extend(["--model-type", model_type])
+        cmd.extend(["--max-length", str(max_length)])
+        cmd.extend(["--sample-frames", str(sample_frames)])
+        cmd.extend(["--frame-sampling", frame_sampling])
+        if dry_run:
+            cmd.append("--dry-run")
+        
+        # Add metadata correction parameters
+        if update_episodes:
+            cmd.append("--update-episodes")
+        if correct_fps:
+            cmd.append("--correct-fps")
+        cmd.extend(["--target-fps", str(target_fps)])
+        if correct_robot_type:
+            cmd.append("--correct-robot-type")
+        if robot_type:
+            cmd.extend(["--robot-type", robot_type])
+        
+        # Add hub parameters
+        if push_to_hub:
+            cmd.append("--push-to-hub")
+        if output_repo_id:
+            cmd.extend(["--output-repo-id", output_repo_id])
+        
+        # Add other options
+        if analyze_only:
+            cmd.append("--analyze-only")
+        if verbose:
+            cmd.append("--verbose")
+        
+        # Execute the command
+        progress(0.5, desc="Running processing command...")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            return f"Error during processing:\n{result.stderr}"
+        
+        # Finalize
+        progress(1.0, desc="Finalizing...")
+        
+        return f"Successfully processed dataset: {repo_id}\nCommand output:\n{result.stdout}"
     
-    # Process each selected task
-    for i, task in enumerate(tasks, 1):
-        progress(i/total_steps, desc=f"Processing: {task}")
-        time.sleep(1)  # Simulate task processing
-    
-    # Finalize
-    progress(1.0, desc="Finalizing...")
-    time.sleep(0.5)  # Simulate finalization
-    
-    task_str = ", ".join(tasks) if tasks else "No tasks selected"
-    return f"Processing dataset: {dataset_id}\nInput path: {input_path}\nOutput path: {output_path}\nSelected tasks: {task_str}"
+    except Exception as e:
+        return f"Error occurred: {str(e)}"
 
 # Custom CSS for styling
 custom_css = """
@@ -67,7 +151,7 @@ custom_css = """
 """
 
 # Create the Gradio interface
-with gr.Blocks(css=custom_css, title="LeRobot Dataset Preprocess", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(css=custom_css, title="LeRobot Dataset Processing", theme=gr.themes.Soft()) as demo:
     
     # Header section
     gr.HTML("""
@@ -97,40 +181,122 @@ with gr.Blocks(css=custom_css, title="LeRobot Dataset Preprocess", theme=gr.them
     """)
     
     # Main input section
-    with gr.Row():
-        with gr.Column(scale=4):
-            dataset_input = gr.Textbox(
-                placeholder="enter dataset id (ex: lerobot/droid_100)",
-                label="Dataset ID",
+    with gr.Column():
+        # Required arguments
+        with gr.Accordion("Required Arguments", open=True):
+            repo_id = gr.Textbox(
+                placeholder="username/dataset-name",
+                label="Repository ID",
                 elem_classes=["dataset-input"]
             )
-            input_path = gr.Textbox(
-                placeholder="Enter input path",
-                label="Input Path",
+            output_dir = gr.Textbox(
+                placeholder="Output directory path",
+                label="Output Directory",
                 elem_classes=["path-input"]
             )
-            output_path = gr.Textbox(
-                placeholder="Enter output path",
-                label="Output Path",
-                elem_classes=["path-input"]
-            )
-            
-            # Task checkboxes
-            gr.Markdown("### Preprocessing Tasks")
+        
+        # Processing options
+        with gr.Accordion("Processing Options", open=True):
             task_checkboxes = gr.CheckboxGroup(
                 choices=[
-                    "Resize Images",
-                    "Normalize Data",
-                    "Extract Features",
-                    "Clean Annotations",
-                    "Data Augmentation"
+                    "Run Full Pipeline",
+                    "Stabilize Videos",
+                    "Enhance Task Descriptions",
+                    "Correct Metadata"
                 ],
                 label="Select Tasks",
                 value=[]
             )
         
-        with gr.Column(scale=1):
-            go_button = gr.Button("Process", variant="primary", size="lg")
+        # Video stabilization parameters
+        with gr.Accordion("Video Stabilization Parameters", open=False):
+            episodes = gr.Textbox(
+                placeholder="Space-separated episode numbers",
+                label="Episodes to Process"
+            )
+            camera_keys = gr.Textbox(
+                placeholder="Space-separated camera keys",
+                label="Camera Keys to Process"
+            )
+            smoothing_window = gr.Slider(
+                minimum=1,
+                maximum=100,
+                value=30,
+                step=1,
+                label="Smoothing Window"
+            )
+            max_shift_percent = gr.Slider(
+                minimum=0.0,
+                maximum=1.0,
+                value=0.2,
+                step=0.01,
+                label="Maximum Shift Percentage"
+            )
+        
+        # Task enhancement parameters
+        with gr.Accordion("Task Enhancement Parameters", open=False):
+            model_name = gr.Textbox(
+                value="Qwen/Qwen2.5-VL-3B-Instruct",
+                label="Model Name"
+            )
+            model_type = gr.Dropdown(
+                choices=["qwen2.5-vl", "llava-next"],
+                value="qwen2.5-vl",
+                label="Model Type"
+            )
+            max_length = gr.Slider(
+                minimum=1,
+                maximum=100,
+                value=30,
+                step=1,
+                label="Max Length for Task Descriptions"
+            )
+            sample_frames = gr.Slider(
+                minimum=1,
+                maximum=10,
+                value=3,
+                step=1,
+                label="Number of Frames to Sample"
+            )
+            frame_sampling = gr.Dropdown(
+                choices=["uniform", "start", "middle", "end"],
+                value="uniform",
+                label="Frame Sampling Strategy"
+            )
+            dry_run = gr.Checkbox(label="Dry Run", value=False)
+        
+        # Metadata correction parameters
+        with gr.Accordion("Metadata Correction Parameters", open=False):
+            update_episodes = gr.Checkbox(label="Update Episode Metadata", value=False)
+            correct_fps = gr.Checkbox(label="Correct FPS", value=False)
+            target_fps = gr.Slider(
+                minimum=1,
+                maximum=120,
+                value=30,
+                step=1,
+                label="Target FPS"
+            )
+            correct_robot_type = gr.Checkbox(label="Correct Robot Type", value=False)
+            robot_type = gr.Textbox(
+                placeholder="Robot type to set",
+                label="Robot Type"
+            )
+        
+        # Hub parameters
+        with gr.Accordion("Hub Parameters", open=False):
+            push_to_hub = gr.Checkbox(label="Push to Hub", value=False)
+            output_repo_id = gr.Textbox(
+                placeholder="Output repository ID",
+                label="Output Repository ID"
+            )
+        
+        # Other options
+        with gr.Accordion("Other Options", open=False):
+            analyze_only = gr.Checkbox(label="Analyze Only", value=False)
+            verbose = gr.Checkbox(label="Verbose Logging", value=False)
+        
+        # Process button at the bottom
+        go_button = gr.Button("Process", variant="primary", size="lg")
     
     # Output area
     output_text = gr.Textbox(
@@ -143,15 +309,32 @@ with gr.Blocks(css=custom_css, title="LeRobot Dataset Preprocess", theme=gr.them
     go_button.click(
         preprocess_dataset,
         inputs=[
-            dataset_input,
-            input_path,
-            output_path,
-            task_checkboxes
+            repo_id,
+            output_dir,
+            task_checkboxes,
+            episodes,
+            camera_keys,
+            smoothing_window,
+            max_shift_percent,
+            model_name,
+            model_type,
+            max_length,
+            sample_frames,
+            frame_sampling,
+            dry_run,
+            update_episodes,
+            correct_fps,
+            target_fps,
+            correct_robot_type,
+            robot_type,
+            push_to_hub,
+            output_repo_id,
+            analyze_only,
+            verbose
         ],
         outputs=[output_text]
     )
 
 # Launch the interface
 if __name__ == "__main__":
-    demo.launch(
-    )
+    demo.launch()
